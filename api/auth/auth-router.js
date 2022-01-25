@@ -50,15 +50,23 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       "role_name": "admin" // the role of the authenticated user
     }
    */
-    if(bcrypt.compareSync(req.user.password, req.user.password)){
-      const token = buildToken(req.user)
-      res.json({
-        'message': `${req.user.username} is back`,
-        token
+    let { username, password } = req.body
+
+    Users.findBy({ username })
+      .then(([user]) => {
+        if (user && bcrypt.compareSync(password, user.password)) {
+          // here we make this thing called token
+          // it's just a string that's just as good as valid credentials
+          const token = buildToken(user)
+          res.status(200).json({
+            message: `${user.username} is back`,
+            token,
+          })
+        } else {
+          next({ status: 401, message: 'Invalid Credentials' })
+        }
       })
-    }else{
-      next({status: 401, message:'Invalid credentials'})
-    }
+      .catch(next)
 });
 
   function buildToken(user){
